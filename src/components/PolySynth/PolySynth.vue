@@ -37,9 +37,6 @@
                     span {{ envelopeParams[envelopeParam.name].value }}
     .polysynth__param-group
         h3.polysynth__param-group-name Low pass filter
-        .polysynth__param-input-group
-            input(type="checkbox" id="lpf-enabled-checkbox" v-model="lowPassFilter.enabled" @change="updateSynth")
-            label Enable
         label Frequency
         .polysynth__param-input-group
             input(type="range" min="20" max="20000" id="lpf-range-input" v-model="lowPassFilter.frequency" @change="updateLPFrequency")
@@ -64,6 +61,14 @@
                             @change="updateLPEnvelopeParams($event, envelopeParam.name)"
                         )
                         span {{ lowPassFilter.envelopeParams[envelopeParam.name].value }}
+    EnvelopeControl
+    FilterModule(
+        :id="lowPassFilter.id"
+        :enabled="lowPassFilter.enabled"
+        :frequency="lowPassFilter.frequency"
+        @changeEnabled="handleEnabledChange"
+        @changeFrequency="handleFrequencyChange"
+    )
     .polysynth__test-tone
         button(@mousedown="playNote(testNote + testOctave)" @mouseup="releaseNote") Test {{ testNote + testOctave }}
         select(v-model="testNote")
@@ -78,6 +83,8 @@
 
 <script>
 import NoteMixin from '../../mixins/NoteMixin.vue'
+import EnvelopeControl from '../Modules/EnvelopeControl.vue'
+import FilterModule from '../Modules/FilterModule.vue'
 
 export default {
     data() {
@@ -129,6 +136,7 @@ export default {
                 }
             },
             lowPassFilter: {
+                id: 'lpf',
                 enabled: false,
                 frequency: 5000,
                 Q: 1,
@@ -159,6 +167,7 @@ export default {
         };
     },
     mixins: [NoteMixin],
+    components: {EnvelopeControl, FilterModule},
     mounted() {
         this.audioContext = new AudioContext();
         if (this.audioContext.state === 'running') {
@@ -172,6 +181,17 @@ export default {
         }
     },
     methods: {
+        // Filter module handlers
+        handleEnabledChange() {
+            this.lowPassFilter.enabled = !this.lowPassFilter.enabled
+            this.setupSynth()
+        },
+        handleFrequencyChange(frequency) {
+            this.lowPassFilter.frequency = frequency
+            if (this.lowPassFilter.enabled) {
+                this.lowPassFilter.filter.frequency.setValueAtTime(this.lowPassFilter.frequency, this.audioContext.currentTime);
+            }
+        },
         updateEnvelopeParams(event, paramName) {
             this.envelopeParams[paramName].value = parseFloat(event.target.value);
         },

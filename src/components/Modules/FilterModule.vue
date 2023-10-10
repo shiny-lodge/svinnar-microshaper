@@ -1,40 +1,108 @@
-<template>
-div
-    h3 Low pass filter
-    div
-      input(type='checkbox', id='lpf-enabled-checkbox', v-model='enabled', @change='handleChange')
-      label(for='lpf-enabled-checkbox') Enable
-    div
-      label(for='lpf-range-input') Frequency
-      input(type='range', id='lpf-range-input', v-model='frequency', min='20', max='20000', @change='handleChange')
-      span {{ frequency }} Hz
-    div
-      label(for='lpf-q-input') Q
-      input(type='range', id='lpf-q-input', v-model='Q', min='0', max='20', @change='handleChange')
-      span {{ Q }}
-    EnvelopeControl(:envelope-params='envelopeParams', @change='handleEnvelopeChange')
-</template>
-  
+
 <script>
-import EnvelopeControl from './EnvelopeControl.vue';
 
 export default {
-    components: {
-        EnvelopeControl,
+    name: 'FilterModule',
+    data() {
+        return {
+            isHidden: false
+        }
     },
     props: {
-        enabled: Boolean,
-        frequency: Number,
-        Q: Number,
-        envelopeParams: Object,
+        enabled: {
+            type: Boolean,
+            required: true
+        },
+        id: {
+            type: String,
+            required: true
+        },
+        frequency: {
+            type: Number,
+            required: true
+        }
     },
     methods: {
-        handleChange() {
-            this.$emit('change');
+        toggleParameterVisibility () {
+            this.isHidden = !this.isHidden
         },
-        handleEnvelopeChange(name) {
-            this.$emit('envelope-change', name);
+        handleChangeEnabledStatus () {
+            this.$emit('change-enabled')
         },
-    },
+        handleChangeFrequency (event) {
+            this.$emit('change-frequency', event.target.value)
+        }
+    }
 };
+
 </script>
+
+
+<template lang="pug">
+.filter-module
+    .filter-module__header
+        span Low pass filter
+        div
+            button(@click='handleChangeEnabledStatus') {{ enabled ? 'Disable' : 'Enable' }}
+            button(@click='toggleParameterVisibility') Hide
+    .filter-module__parameters(:class="{ hidden: isHidden }")
+        .filter-module__parameter-block
+            label.filter-module__parameter-label Frequency
+            input.filter-module__range(
+                type='range' 
+                min='20'
+                max='20000'
+                :value='frequency'
+                :id='id + "-frequency-range"'
+                @input='handleChangeFrequency'
+                orient='vertical'
+            )
+            .filter-module__frequency-input
+                input(
+                    type='number' 
+                    min='20'
+                    max='20000'
+                    :value='frequency'
+                    :id='id + "-frequency-input"'
+                    @change='handleChangeFrequency'
+                )
+                span Hz
+</template>
+
+<style scoped lang="sass">
+.filter-module
+    background: wheat
+    padding: 20px 30px
+    &__header
+        display: flex
+        flex-direction: row
+        justify-content: space-between
+        align-items: center
+        margin-bottom: 30px
+        span
+            font-size: 20px
+    &__parameters
+        &.hidden
+            display: none
+    &__frequency-input
+        margin-left: auto
+        input
+            width: 40px
+            text-align: center
+            border: none
+            outline: none
+            border-bottom: 1px solid black
+            background: transparent
+    &__parameter-label
+        margin-bottom: 10px
+    &__range
+        appearance: slider-vertical
+        width: 20px
+        margin: 0
+        margin-bottom: 10px
+    &__parameter-block
+        width: fit-content
+        display: flex
+        flex-direction: column
+        align-items: center
+</style>
